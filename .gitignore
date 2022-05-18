@@ -1,0 +1,5 @@
+.idea/
+
+model/pose_iter_160000.caffemodel
+img/img/
+video/
