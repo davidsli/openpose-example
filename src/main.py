@@ -4,44 +4,57 @@ import time
 import os
 from pathlib import Path
 from lib.inference import OpInf, nPoints, posePairs, colors
+from lib.utils import coordPersonwiseKeypoints
 
-device = 'gpu'
 
-model_path = Path(os.path.dirname(os.path.realpath(__file__))) / '..' / 'model'
+def main():
+    device = 'gpu'
 
-proto_file = str(model_path) + '/pose_deploy_linevec_faster_4_stages.prototxt'
-weights_file = str(model_path) + '/pose_iter_160000.caffemodel'
+    model_path = Path(os.path.dirname(os.path.realpath(__file__))) / '..' / 'model'
 
-net = cv2.dnn.readNetFromCaffe(proto_file, weights_file)
+    proto_file = str(model_path) + '/pose_deploy_linevec_faster_4_stages.prototxt'
+    weights_file = str(model_path) + '/pose_iter_160000.caffemodel'
 
-image1 = cv2.imread('img/test_img/test-2.jpg')
+    net = cv2.dnn.readNetFromCaffe(proto_file, weights_file)
 
-if device == "cpu":
-    net.setPreferableBackend(cv2.dnn.DNN_TARGET_CPU)
-    print("Using CPU device")
-elif device == "gpu":
-    net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
-    net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
-    print("Using GPU device")
+    image1 = cv2.imread('img/test_img/test-3.jpg')
 
-t = time.time()
+    if device == "cpu":
+        net.setPreferableBackend(cv2.dnn.DNN_TARGET_CPU)
+        print("Using CPU device")
+    elif device == "gpu":
+        net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+        net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
+        print("Using GPU device")
 
-op = OpInf(net)
-detected_keypoints, keypoints_list, personwiseKeypoints = op(image1)
+    t = time.time()
 
-frameClone = image1.copy()
-for i in range(nPoints):
-    for j in range(len(detected_keypoints[i])):
-        cv2.circle(frameClone, detected_keypoints[i][j][0:2], 3, [0, 0, 255], -1, cv2.LINE_AA)
+    op = OpInf(net)
+    detected_keypoints, keypoints_list, personwiseKeypoints = op(image1)
+    print('detected_keypoints : ', detected_keypoints)
+    print('keypoints_list : ', keypoints_list)
+    print('personwiseKeypoints : ', personwiseKeypoints)
 
-for i in range(14):
-    for n in range(len(personwiseKeypoints)):
-        index = personwiseKeypoints[n][np.array(posePairs[i])]
-        if -1 in index:
-            continue
-        B = np.int32(keypoints_list[index.astype(int), 0])
-        A = np.int32(keypoints_list[index.astype(int), 1])
-        cv2.line(frameClone, (B[0], A[0]), (B[1], A[1]), colors[i], 3, cv2.LINE_AA)
+    coordKeypoints = coordPersonwiseKeypoints(keypoints_list, personwiseKeypoints)
+    print('\ncoordKeypoints : ', coordKeypoints)
 
-cv2.imshow('OpenPose Inference', frameClone)
-cv2.waitKey(0)
+    frameClone = image1.copy()
+    for i in range(nPoints):
+        for j in range(len(detected_keypoints[i])):
+            cv2.circle(frameClone, detected_keypoints[i][j][0:2], 3, [0, 0, 255], -1, cv2.LINE_AA)
+
+    for i in range(14):
+        for n in range(len(personwiseKeypoints)):
+            index = personwiseKeypoints[n][np.array(posePairs[i])]
+            if -1 in index:
+                continue
+            B = np.int32(keypoints_list[index.astype(int), 0])
+            A = np.int32(keypoints_list[index.astype(int), 1])
+            cv2.line(frameClone, (B[0], A[0]), (B[1], A[1]), colors[i], 3, cv2.LINE_AA)
+
+    cv2.imshow('OpenPose Inference', frameClone)
+    cv2.waitKey(0)
+
+
+if __name__ == '__main__':
+    main()

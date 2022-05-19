@@ -1,5 +1,4 @@
 import cv2
-import time
 import numpy as np
 
 nPoints = 15
@@ -15,9 +14,7 @@ mapIdx = [[16, 17], [18, 19], [20, 21], [22, 23], [24, 25], [26, 27], [28, 29], 
 
 colors = [[0, 100, 255], [0, 100, 255], [0, 255, 255], [0, 100, 255], [0, 255, 255], [0, 100, 255],
           [0, 255, 0], [255, 200, 100], [255, 0, 255], [0, 255, 0], [255, 200, 100], [255, 0, 255],
-          [0, 0, 255], [255, 0, 0], [200, 200, 0], [255, 0, 0], [125, 200, 125], [125, 200, 0],
-          [200, 200, 200], [200, 100, 200], [200, 200, 0], [0, 200, 0], [200, 0, 255], [0, 250, 125],
-          [0, 200, 0], [0, 120, 200]]
+          [0, 0, 255], [255, 0, 0]]
 
 
 class OpInf:
@@ -69,51 +66,42 @@ class OpInf:
         self.keypoints_list = np.zeros((0, 3))
         keypoint_id = 0
         threshold = 0.1
-
         for part in range(nPoints):
             probMap = self.output[0, part, :, :]
             probMap = cv2.resize(probMap, (self.image.shape[1], self.image.shape[0]))
-            #     plt.figure()
-            #     plt.imshow(255*np.uint8(probMap>threshold))
             keypoints = OpInf.__getKeypoints(probMap, threshold)
-            print("Keypoints - {} : {}".format(keypointsMapping[part], keypoints))
             keypoints_with_id = []
             for i in range(len(keypoints)):
                 keypoints_with_id.append(keypoints[i] + (keypoint_id,))
                 self.keypoints_list = np.vstack([self.keypoints_list, keypoints[i]])
                 keypoint_id += 1
-
             self.detected_keypoints.append(keypoints_with_id)
-        print(self.detected_keypoints)
 
     def findValidPairs(self):
         frameHeight, frameWidth = self.image.shape[0:2]
         self.valid_pairs = []
         self.invalid_pairs = []
-        n_interp_samples = 10  # 벡터를 나눌 수
+        n_interp_samples = 10
         paf_score_th = 0.1
         conf_th = 0.7
-        # loop for every POSE_PAIR
+        # loop for every posePairs
         for k in range(len(mapIdx)):
             # A->B constitute a limb
             pafA = self.output[0, mapIdx[k][0], :, :]
             pafB = self.output[0, mapIdx[k][1], :, :]
             pafA = cv2.resize(pafA, (frameWidth, frameHeight))
             pafB = cv2.resize(pafB, (frameWidth, frameHeight))
-
             # Find the keypoints for the first and second limb
             candA = self.detected_keypoints[posePairs[k][0]]
             candB = self.detected_keypoints[posePairs[k][1]]
             nA = len(candA)
             nB = len(candB)
-
             # If keypoints for the joint-pair is detected
             # check every joint in candA with every joint in candB
             # Calculate the distance vector between the two joints
             # Find the PAF values at a set of interpolated points between the joints
             # Use the above formula to compute a score to mark the connection valid
-
-            if (nA != 0 and nB != 0):
+            if nA != 0 and nB != 0:
                 valid_pair = np.zeros((0, 3))
                 for i in range(nA):
                     max_j = -1
@@ -135,10 +123,9 @@ class OpInf:
                         for k in range(len(interp_coord)):
                             paf_interp.append([pafA[int(round(interp_coord[k][1])), int(round(interp_coord[k][0]))],
                                                pafB[int(round(interp_coord[k][1])), int(round(interp_coord[k][0]))]])
-                            # Find E
+                        # Find E
                         paf_scores = np.dot(paf_interp, d_ij)
                         avg_paf_score = sum(paf_scores) / len(paf_scores)
-
                         # Check if the connection is valid
                         # If the fraction of interpolated vectors aligned with PAF is higher then threshold -> Valid Pair
                         if (len(np.where(paf_scores > paf_score_th)[0]) / n_interp_samples) > conf_th:
@@ -149,29 +136,24 @@ class OpInf:
                     # Append the connection to the list
                     if found:
                         valid_pair = np.append(valid_pair, [[candA[i][3], candB[max_j][3], maxScore]], axis=0)
-
                 # Append the detected connections to the global list
                 self.valid_pairs.append(valid_pair)
             else:  # If no keypoints are detected
-                print("No Connection : k = {}".format(k))
+                # print("No Connection : k = {}".format(k))
                 self.invalid_pairs.append(k)
                 self.valid_pairs.append([])
-        print(self.valid_pairs)
 
     # This function creates a list of keypoints belonging to each person
     # For each detected valid pair, it assigns the joint(s) to a person
     # It finds the person and index at which the joint should be added. This can be done since we have an id for each joint
-
     def findPersonwiseKeypoints(self):
         # the last number in each row is the overall score
-        self.personwiseKeypoints = -1 * np.ones((0, 26))
-
+        self.personwiseKeypoints = -1 * np.ones((0, 16))
         for k in range(len(mapIdx)):
             if k not in self.invalid_pairs:
                 partAs = self.valid_pairs[k][:, 0]
                 partBs = self.valid_pairs[k][:, 1]
                 indexA, indexB = np.array(posePairs[k])
-
                 for i in range(len(self.valid_pairs[k])):
                     found = 0
                     person_idx = -1
@@ -180,15 +162,13 @@ class OpInf:
                             person_idx = j
                             found = 1
                             break
-
                     if found:
                         self.personwiseKeypoints[person_idx][indexB] = partBs[i]
                         self.personwiseKeypoints[person_idx][-1] += self.keypoints_list[partBs[i].astype(int), 2] + \
-                                                               self.valid_pairs[k][i][2]
-
+                                                                    self.valid_pairs[k][i][2]
                     # if find no partA in the subset, create a new subset
-                    elif not found and k < 24:
-                        row = -1 * np.ones(26)
+                    elif not found and k < 14:
+                        row = -1 * np.ones(16)
                         row[indexA] = partAs[i]
                         row[indexB] = partBs[i]
                         # add the keypoint_scores for the two keypoints and the paf_score
