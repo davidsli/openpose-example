@@ -156,7 +156,7 @@ def getPersonwiseKeypoints(valid_pairs, invalid_pairs):
     return personwiseKeypoints
 
 
-image1 = cv2.imread('img/test_img/test-5.jpg')
+image1 = cv2.imread('img/test_img/test-3.jpg')
 frameWidth = image1.shape[1]
 frameHeight = image1.shape[0]
 
