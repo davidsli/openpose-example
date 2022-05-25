@@ -1,12 +1,12 @@
-import sys
-
 import cv2
 import numpy as np
 import time
 import os
+import sys
 from pathlib import Path
 from lib.inference import OpInf, nPoints, posePairs, colors
 from lib.utils import coordPersonwiseKeypoints
+from lib.video import BufferlessVideoCapture
 
 
 def main():
@@ -32,42 +32,47 @@ def main():
     # image_name = 'test-2.jpg'
     # image1 = cv2.imread(image_dir + image_name)
 
-    video_name = 'test-3'
-    cap = cv2.VideoCapture(f'video/test/{video_name}.mp4')
+    # video_name = 'test-3'
+    # cap = cv2.VideoCapture(f'video/test/{video_name}.mp4')
+    cam_url = 'rtsp://192.168.1.32:554/stream2'
+    cap = BufferlessVideoCapture(cam_url)
     if not cap.isOpened():
         sys.stderr.write('ERROR: Camera is not opened.')
         sys.exit()
 
-    w = round(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    h = round(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fps = round(cap.get(cv2.CAP_PROP_FPS))
-    frame_skip_rate = 5
+    # w = round(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    # h = round(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    # fps = round(cap.get(cv2.CAP_PROP_FPS))
+    # frame_skip_rate = 5
 
-    fourcc = cv2.VideoWriter_fourcc(*'DIVX')
-    out = cv2.VideoWriter(f'video/out/{video_name}.avi', fourcc, round(fps / 10), (w, h))
+    # fourcc = cv2.VideoWriter_fourcc(*'DIVX')
+    # out = cv2.VideoWriter(f'video/out/{video_name}.avi', fourcc, round(fps / 10), (w, h))
 
-    skip = frame_skip_rate
+    # skip = frame_skip_rate
     while True:
         t = time.time()
 
-        ret, frame = cap.read()
-        if not (skip == 0):
-            skip = skip - 1
-            continue
-        if not ret:
-            break
+        # ret, frame = cap.read()
+        frame = cap.read()
+        # if not (skip == 0):
+        #     skip = skip - 1
+        #     continue
+        # if not ret:
+        #     break
 
-        skip = frame_skip_rate
+        # skip = frame_skip_rate
 
         frame = runFrame(op, frame)
 
-        # cv2.imshow('OpenPose Inference', frame)
-        out.write(frame)
+        cv2.imshow('OpenPose Inference', frame)
+        # out.write(frame)
 
         timeTaken = time.time() - t
         print(f'FPS = {1 / timeTaken}, Time Taken = {timeTaken}')
 
-    cv2.waitKey(0)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
 
 
 def runFrame(op, frame):
