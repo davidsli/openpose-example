@@ -8,6 +8,10 @@ authors = ["wtchrs <wtchr_@hotmail.com>"]
 python = "^3.8"
 opencv-python = "^4.5.5"
 numpy = "^1.22.3"
+tensorflow = "^2.9.1"
+scikit-learn = "^1.1.1"
+matplotlib = "^3.5.2"
+pandas = "^1.4.2"
 
 [tool.poetry.dev-dependencies]
 

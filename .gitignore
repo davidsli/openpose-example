@@ -4,3 +4,5 @@ model/pose_iter_160000.caffemodel
 img/img/
 img/out/
 video/
+
+output.avi

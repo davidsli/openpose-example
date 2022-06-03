@@ -35,6 +35,8 @@ class OpInf:
         self.probMapsToKeypoints()
         self.findValidPairs()
         self.findPersonwiseKeypoints()
+        if self.detected_keypoints is None or self.keypoints_list is None or self.personwiseKeypoints is None:
+            raise TypeError('None in OpInf')
         return self.detected_keypoints, self.keypoints_list, self.personwiseKeypoints
 
     def netInference(self, image):
@@ -45,6 +47,11 @@ class OpInf:
         inpBlob = cv2.dnn.blobFromImage(image, 1.0 / 255, (inWidth, self.inHeight), (0, 0, 0), swapRB=False, crop=False)
         self.net.setInput(inpBlob)
         self.output = self.net.forward()
+
+    def getOutput(self):
+        if self.output is None:
+            raise TypeError('self.output is None')
+        return self.output
 
     def __getKeypoints(probMap, threshold=0.1):
         mapSmooth = cv2.GaussianBlur(probMap, (3, 3), 0, 0)

@@ -3,9 +3,11 @@ import time
 import os
 import sys
 import argparse
+import numpy as np
 from pathlib import Path
+from keras.models import load_model
 from lib.inference import OpInf
-from lib.utils import runFrame
+from lib.utils import keypointsDataFromImage
 from lib.video import BufferlessVideoCapture
 
 
@@ -27,6 +29,8 @@ def main():
     net = cv2.dnn.readNetFromCaffe(proto_file, weights_file)
     op = OpInf(net, inHeight=400)
 
+    model = load_model(root_dir + '/out/model/checkpoint.h5')
+
     if device == "cpu":
         net.setPreferableBackend(cv2.dnn.DNN_TARGET_CPU)
         print("Using CPU device")
@@ -35,40 +39,52 @@ def main():
         net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
         print("Using GPU device")
 
-    # image_dir = 'img/test_img/'
-    # image_name = 'test-2.jpg'
-    # image1 = cv2.imread(image_dir + image_name)
-
-    # video_name = 'test-3'
-    # cap = cv2.VideoCapture(f'video/test/{video_name}.mp4')
-    # cam_url = 'rtsp://192.168.1.32:554/stream2'
     cam_url = args.get('url')
-    cap = BufferlessVideoCapture(cam_url)
-    if not cap.isOpened():
+    capture = BufferlessVideoCapture(cam_url)
+    if not capture.isOpened():
         sys.stderr.write('ERROR: Camera is not opened.')
         sys.exit()
 
     output_name = root_dir + '/output.avi'
-    w = round(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    h = round(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    w = round(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    h = round(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
     # fps = round(cap.get(cv2.CAP_PROP_FPS))
     fps = 10
 
     fourcc = cv2.VideoWriter_fourcc(*'DIVX')
     out = cv2.VideoWriter(output_name, fourcc, fps, (w, h))
 
+    dumpLabel = 'Dumping: {0}'
+
     while True:
         t = time.time()
 
         # ret, frame = cap.read()
-        frame = cap.read()
+        frame = capture.read()
         # if not ret:
         #     break
 
-        frame = runFrame(op, frame)
+        #  frame = runFrame(op, frame)
+        keypoints = keypointsDataFromImage(op, frame).astype(np.uint16)
+        if keypoints.size != 0:
+            pred = model.predict(keypoints)
+        else:
+            pred = []
+        print(pred)
 
-        cv2.imshow('OpenPose Inference', frame)
-        out.write(frame)
+        for i, prob in enumerate(pred):
+            if prob[0] > 0.001:
+                headPosition = keypoints[i,0:2]
+                print('headPosition', headPosition)
+                labelWithProb = dumpLabel.format(prob[0] * 100)
+                (w, h), _ = cv2.getTextSize(labelWithProb, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)
+                frame = cv2.rectangle(frame, (headPosition[0], headPosition[1] - 20),
+                                      (headPosition[0] + w, headPosition[1]), (0,0,255), -1)
+                frame = cv2.putText(frame, labelWithProb, (headPosition[0], headPosition[1] - 5),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 1)
+
+        cv2.imshow('Real-time Video', frame)
+        #  out.write(frame)
 
         timeTaken = time.time() - t
         print(f'FPS = {1 / timeTaken}, Time Taken = {timeTaken}')
@@ -77,7 +93,7 @@ def main():
             break
 
     out.release()
-    cap.release()
+    capture.release()
 
 
 if __name__ == '__main__':
