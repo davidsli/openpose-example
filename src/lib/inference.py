@@ -39,6 +39,11 @@ class OpInf:
             raise TypeError('None in OpInf')
         return self.detected_keypoints, self.keypoints_list, self.personwiseKeypoints
 
+    def getResult(self):
+        if self.detected_keypoints is None or self.keypoints_list is None or self.personwiseKeypoints is None:
+            raise TypeError('None in OpInf')
+        return self.detected_keypoints, self.keypoints_list, self.personwiseKeypoints
+
     def netInference(self, image):
         self.image = image
         frameHeight, frameWidth = image.shape[0:2]

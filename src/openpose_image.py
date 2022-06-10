@@ -4,7 +4,7 @@ import argparse
 import numpy as np
 from pathlib import Path
 from lib.inference import OpInf
-from lib.utils import runFrame
+from lib.utils import runFrameWithInference
 import matplotlib.pyplot as plt
 
 
@@ -37,7 +37,7 @@ def main():
     image_name = args.get('image')
     image1 = cv2.imread(image_name)
 
-    frame = runFrame(op, image1)
+    frame = runFrameWithInference(op, image1)
 
     output = op.getOutput()
     for i in range(16):

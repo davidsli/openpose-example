@@ -5,4 +5,7 @@ img/img/
 img/out/
 video/
 
+out/*
+!out/model/
+
 output.avi

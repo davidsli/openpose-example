@@ -1,3 +1,4 @@
+import os
 import cv2
 import numpy as np
 from .inference import OpInf, nPoints, posePairs, colors
@@ -16,8 +17,13 @@ def coordPersonwiseKeypoints(keypointsList, personwiseKeypoints):
     return np.array(coordKeypoints)
 
 
+def runFrameWithInference(op: OpInf, frame, verbose=False):
+    op(frame)
+    return runFrame(op, frame, verbose)
+
+
 def runFrame(op: OpInf, frame, verbose=False):
-    detected_keypoints, keypoints_list, personwiseKeypoints = op(frame)
+    detected_keypoints, keypoints_list, personwiseKeypoints = op.getResult()
     if verbose:
         print('detected_keypoints :')
         print(detected_keypoints)
@@ -28,13 +34,10 @@ def runFrame(op: OpInf, frame, verbose=False):
         coordKeypoints = coordPersonwiseKeypoints(keypoints_list, personwiseKeypoints)
         print('\ncoordKeypoints :')
         print(coordKeypoints)
-
     frameClone = frame.copy()
-
     for i in range(nPoints):
         for j in range(len(detected_keypoints[i])):
             cv2.circle(frameClone, detected_keypoints[i][j][0:2], 3, [0, 0, 255], -1, cv2.LINE_AA)
-
     for i in range(14):
         for n in range(len(personwiseKeypoints)):
             index = personwiseKeypoints[n][np.array(posePairs[i])]
@@ -43,7 +46,6 @@ def runFrame(op: OpInf, frame, verbose=False):
             B = np.int32(keypoints_list[index.astype(int), 0])
             A = np.int32(keypoints_list[index.astype(int), 1])
             cv2.line(frameClone, (B[0], A[0]), (B[1], A[1]), colors[i], 3, cv2.LINE_AA)
-
     return frameClone
 
 
@@ -113,6 +115,6 @@ if __name__ == '__main__':
 
     image = cv2.imread(root_dir + '/img/test_img/test-2.jpg')
 
-    image = runFrame(op, image, verbose=True)
+    image = runFrameWithInference(op, image, verbose=True)
     # cv2.imshow('Inferenced Image', image)
     # cv2.waitKey(0)

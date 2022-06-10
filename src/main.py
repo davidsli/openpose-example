@@ -5,7 +5,7 @@ import sys
 import argparse
 from pathlib import Path
 from lib.inference import OpInf
-from lib.utils import runFrame
+from lib.utils import runFrameWithInference
 from lib.video import BufferlessVideoCapture
 
 
@@ -65,7 +65,7 @@ def main():
         # if not ret:
         #     break
 
-        frame = runFrame(op, frame)
+        frame = runFrameWithInference(op, frame)
 
         cv2.imshow('OpenPose Inference', frame)
         out.write(frame)

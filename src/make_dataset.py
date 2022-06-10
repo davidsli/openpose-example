@@ -2,7 +2,7 @@ import os
 import cv2
 from pathlib import Path
 from glob import glob
-import numpy
+import numpy as np
 from lib.utils import extractFrame, keypointsDataFromImageFiles
 from lib.inference import OpInf
 
@@ -23,13 +23,14 @@ def main():
 
     extractFrame(glob(root_dir + '/video/pos/*.mp4'), root_dir + '/img/out/pos')
     keypointsDataPos = keypointsDataFromImageFiles(op, glob(root_dir + '/img/out/pos/*.jpg'))
-    keypointsDataPos = keypointsDataPos.astype(numpy.uint8)
-    numpy.savetxt(root_dir + '/out/pdata.csv', keypointsDataPos, fmt='%d', delimiter=',')
+    keypointsDataPos = keypointsDataPos.astype(np.uint8)
+    np.savetxt(root_dir + '/out/pdata.csv', keypointsDataPos, fmt='%d', delimiter=',')
 
-    extractFrame(glob(root_dir + '/video/neg/*.mp4') + glob(root_dir + '/video/neg/*.MOV'), root_dir + '/img/out/neg')
+    extractFrame(glob(root_dir + '/video/neg/*.mp4') + glob(root_dir + '/video/neg/*.MOV'),
+                 root_dir + '/img/out/neg')
     keypointsDataNeg = keypointsDataFromImageFiles(op, glob(root_dir + '/img/out/neg/*.jpg'))
-    keypointsDataNeg = keypointsDataNeg.astype(numpy.uint8)
-    numpy.savetxt(root_dir + '/out/ndata.csv', keypointsDataNeg, fmt='%d', delimiter=',')
+    keypointsDataNeg = keypointsDataNeg.astype(np.uint8)
+    np.savetxt(root_dir + '/out/ndata.csv', keypointsDataNeg, fmt='%d', delimiter=',')
 
 if __name__ == '__main__':
     main()
