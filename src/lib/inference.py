@@ -58,6 +58,7 @@ class OpInf:
             raise TypeError('self.output is None')
         return self.output
 
+    @staticmethod
     def __getKeypoints(probMap, threshold=0.1):
         mapSmooth = cv2.GaussianBlur(probMap, (3, 3), 0, 0)
         mapMask = np.uint8(mapSmooth > threshold)
@@ -74,6 +75,8 @@ class OpInf:
         return keypoints
 
     def probMapsToKeypoints(self):
+        if self.output is None or self.image is None:
+            raise TypeError('None in OpInf')
         self.detected_keypoints = []
         self.keypoints_list = np.zeros((0, 3))
         keypoint_id = 0
@@ -90,6 +93,8 @@ class OpInf:
             self.detected_keypoints.append(keypoints_with_id)
 
     def findValidPairs(self):
+        if self.output is None or self.image is None or self.detected_keypoints is None:
+            raise TypeError('None in OpInf')
         frameHeight, frameWidth = self.image.shape[0:2]
         self.valid_pairs = []
         self.invalid_pairs = []
@@ -159,6 +164,8 @@ class OpInf:
     # For each detected valid pair, it assigns the joint(s) to a person
     # It finds the person and index at which the joint should be added. This can be done since we have an id for each joint
     def findPersonwiseKeypoints(self):
+        if self.invalid_pairs is None or self.valid_pairs is None or self.keypoints_list is None:
+            raise TypeError('None in OpInf')
         # the last number in each row is the overall score
         self.personwiseKeypoints = -1 * np.ones((0, 16))
         for k in range(len(mapIdx)):

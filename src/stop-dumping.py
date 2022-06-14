@@ -27,7 +27,7 @@ def main():
     proto_file = model_path + '/pose_deploy_linevec_faster_4_stages.prototxt'
     weights_file = model_path + '/pose_iter_160000.caffemodel'
 
-    net = cv2.dnn.readNetFromCaffe(proto_file, weights_file)
+    net: cv2.dnn.Net = cv2.dnn.readNetFromCaffe(proto_file, weights_file)
     op = OpInf(net, inHeight=400)
 
     model = load_model(root_dir + '/out/model/checkpoint.h5')

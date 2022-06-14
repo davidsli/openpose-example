@@ -22,7 +22,7 @@ python src/get_model.py
 And run the following command.
 
 ```sh
-python src/stop-dumping.py
+python src/stop-dumping.py --url rtsp://YourIpCameraAddress:554
 ```
 
 [openpose]: https://github.com/CMU-Perceptual-Computing-Lab/openpose
